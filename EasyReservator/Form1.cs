@@ -336,12 +336,12 @@ namespace EasyReservator
 
                 List<FileInfo> totalfilesinfo = new List<FileInfo>();
                 List<string> filenamelist = new List<string>();
-                foreach (string ext in extensions)
+                foreach (string extention in extensions)
                 {
                     FileInfo[] filesinfo = null;
                     try
                     {
-                        filesinfo = dirinfo.GetFiles(ext, SearchOption.TopDirectoryOnly);
+                        filesinfo = dirinfo.GetFiles(extention, SearchOption.TopDirectoryOnly);
                     }
                     catch (Exception ex)
                     {
@@ -352,7 +352,7 @@ namespace EasyReservator
                     {
                         foreach (FileInfo file in filesinfo)
                         {
-                            if (!filenamelist.Contains(file.FullName) && (file.Extension == ext.Replace("*", "")))
+                            if (!filenamelist.Contains(file.FullName) && ((file.Extension == extention.Replace("*", "")||(extention.Replace("*", "") == "."))))
                             {
                                 filenamelist.Add(file.FullName);
                                 totalfilesinfo.Add(file);

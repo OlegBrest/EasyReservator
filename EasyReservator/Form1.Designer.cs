@@ -217,7 +217,7 @@
             // currentFileTextBox
             // 
             this.currentFileTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.currentFileTextBox.Location = new System.Drawing.Point(6, 115);
+            this.currentFileTextBox.Location = new System.Drawing.Point(6, 112);
             this.currentFileTextBox.Name = "currentFileTextBox";
             this.currentFileTextBox.ReadOnly = true;
             this.currentFileTextBox.Size = new System.Drawing.Size(628, 20);
