@@ -45,18 +45,17 @@ namespace EasyReservator
         List<string> scannedDirs = null;
         public MainForm()
         {
-            InitializeComponent();
-            InterfaceUpdater.DoWork += InterfaceUpdater_DoWork;
-            InterfaceUpdater.RunWorkerAsync();
-            excludePaths = new List<string>();
-            scannedDirs = new List<string>();
-
-            updtTimer.AutoReset = true;
-            updtTimer.Elapsed += UpdtTimer_Tick;
+            MergetInit();
         }
 
 
         public MainForm(string [] args)
+        {
+            MergetInit();
+            HidedConsolas(args);
+        }
+
+        public void MergetInit()
         {
             InitializeComponent();
             InterfaceUpdater.DoWork += InterfaceUpdater_DoWork;
@@ -66,7 +65,6 @@ namespace EasyReservator
 
             updtTimer.AutoReset = true;
             updtTimer.Elapsed += UpdtTimer_Tick;
-            HidedConsolas(args);
         }
 
         public void HidedConsolas(string [] args)
@@ -253,19 +251,21 @@ namespace EasyReservator
             }
         }
 
-        private void WriteToLogString(string line)
+        private void WriteToLogString(string line,string afterline="")
         {
             if (!File.Exists(logFilePath))
             {
                 using (var outf = File.CreateText(logFilePath))
                 {
                     outf.WriteLine(DateTime.Now.ToString() + "  " + line);
+                    if (afterline!="") outf.WriteLine(DateTime.Now.ToString() + "  " + afterline);
                     return;
                 }
             }
             using (var outf = File.AppendText(logFilePath))
             {
                 outf.WriteLine(DateTime.Now.ToString() + "  " + line);
+                if (afterline != "") outf.WriteLine(DateTime.Now.ToString() + "  " + afterline);
                 return;
             }
         }
@@ -331,86 +331,86 @@ namespace EasyReservator
             if ((isInProgress) && (!scannedDirs.Contains(path)))
             {
                 scannedDirs.Add(path);
-                DirectoryInfo dirinfo = new DirectoryInfo(new DirectoryInfo(path).GetSymbolicLinkTarget());
-                currentDirText = dirinfo.FullName;
+                if (Directory.Exists(path))
+                {
+                    DirectoryInfo dirinfo = new DirectoryInfo(new DirectoryInfo(path).GetSymbolicLinkTarget());
+                    currentDirText = dirinfo.FullName;
 
-                List<FileInfo> totalfilesinfo = new List<FileInfo>();
-                List<string> filenamelist = new List<string>();
-                foreach (string extention in extensions)
-                {
-                    FileInfo[] filesinfo = null;
-                    try
+                    List<FileInfo> totalfilesinfo = new List<FileInfo>();
+                    List<string> filenamelist = new List<string>();
+                    foreach (string extention in extensions)
                     {
-                        filesinfo = dirinfo.GetFiles(extention, SearchOption.TopDirectoryOnly);
-                    }
-                    catch (Exception ex)
-                    {
-                        WriteToLogString(ex.Message);
-                        WriteToLogString(dirinfo.FullName);
-                    }
-                    if (filesinfo != null)
-                    {
-                        foreach (FileInfo file in filesinfo)
-                        {
-                            if (!filenamelist.Contains(file.FullName) && ((file.Extension == extention.Replace("*", "")||(extention.Replace("*", "") == "."))))
-                            {
-                                filenamelist.Add(file.FullName);
-                                totalfilesinfo.Add(file);
-                            }
-                        }
-                    }
-                }
-
-                if (totalfilesinfo != null)
-                {
-
-                    findedfiles += totalfilesinfo.Count();
-                    foreach (FileInfo file in totalfilesinfo)
-                    {
-                        currentFileText = file.Name;
-                        WorkOnFile(file);
-                    }
-                }
-                DirectoryInfo[] dirsinfos = null;
-                try
-                {
-                    dirsinfos = dirinfo.GetDirectories("*", SearchOption.TopDirectoryOnly);// dirsinfos = dirinfo.GetDirectories("*", SearchOption.AllDirectories);
-                }
-                catch (Exception ex)
-                {
-                    WriteToLogString(ex.Message);
-                    WriteToLogString(dirinfo.FullName);
-                }
-
-                if (dirsinfos != null)
-                {
-                    findeddirs += dirsinfos.Count();
-                    foreach (DirectoryInfo di in dirsinfos)
-                    {
+                        FileInfo[] filesinfo = null;
                         try
                         {
-                            WorkOnDir(di.FullName);
+                            filesinfo = dirinfo.GetFiles(extention, SearchOption.TopDirectoryOnly);
                         }
                         catch (Exception ex)
                         {
-                            WriteToLogString(ex.Message);
-                            WriteToLogString(dirinfo.FullName);
+                            WriteToLogString(ex.Message, dirinfo.FullName);
+                        }
+                        if (filesinfo != null)
+                        {
+                            foreach (FileInfo file in filesinfo)
+                            {
+                                if (!filenamelist.Contains(file.FullName) && ((file.Extension == extention.Replace("*", "") || (extention.Replace("*", "") == "."))))
+                                {
+                                    filenamelist.Add(file.FullName);
+                                    totalfilesinfo.Add(file);
+                                }
+                            }
                         }
                     }
-                }
-                if (deleteEmptyDirs)
-                {
-                    bool canDelete = true;
-                    foreach (string exludePath in excludePaths)
+
+                    if (totalfilesinfo != null)
                     {
-                        if (dirinfo.FullName.ToLower().Contains(exludePath.ToLower())) canDelete = false;
+
+                        findedfiles += totalfilesinfo.Count();
+                        foreach (FileInfo file in totalfilesinfo)
+                        {
+                            currentFileText = file.Name;
+                            WorkOnFile(file);
+                        }
                     }
-                    if ((dirinfo.GetDirectories("*", SearchOption.TopDirectoryOnly).Count() == 0) && (dirinfo.GetFiles("*", SearchOption.TopDirectoryOnly).Count() == 0) && canDelete)
+                    DirectoryInfo[] dirsinfos = null;
+                    try
                     {
-                        Directory.Delete(dirinfo.FullName);
+                        dirsinfos = dirinfo.GetDirectories("*", SearchOption.TopDirectoryOnly);// dirsinfos = dirinfo.GetDirectories("*", SearchOption.AllDirectories);
                     }
+                    catch (Exception ex)
+                    {
+                        WriteToLogString(ex.Message,dirinfo.FullName);
+                    }
+
+                    if (dirsinfos != null)
+                    {
+                        findeddirs += dirsinfos.Count();
+                        foreach (DirectoryInfo di in dirsinfos)
+                        {
+                            try
+                            {
+                                WorkOnDir(di.FullName);
+                            }
+                            catch (Exception ex)
+                            {
+                                WriteToLogString(ex.Message,dirinfo.FullName);
+                            }
+                        }
+                    }
+                    if (deleteEmptyDirs)
+                    {
+                        bool canDelete = true;
+                        foreach (string exludePath in excludePaths)
+                        {
+                            if (dirinfo.FullName.ToLower().Contains(exludePath.ToLower())) canDelete = false;
+                        }
+                        if ((dirinfo.GetDirectories("*", SearchOption.TopDirectoryOnly).Count() == 0) && (dirinfo.GetFiles("*", SearchOption.TopDirectoryOnly).Count() == 0) && canDelete)
+                        {
+                            Directory.Delete(dirinfo.FullName);
+                        }
+                    }
+                    workeddirs++;
                 }
-                workeddirs++;
             }
         }
 
@@ -449,7 +449,7 @@ namespace EasyReservator
             }
             catch (Exception ex)
             {
-                WriteToLogString(ex.Message);
+                WriteToLogString(ex.Message, fullNewFileName);
             }
             workedfiles++;
         }
@@ -467,6 +467,17 @@ namespace EasyReservator
             {
                 if ((deleteSource) && canDelete)
                 {
+                    if (File.Exists(fullNewFileName)) 
+                    {
+                        try
+                        {
+                            File.Delete(fullNewFileName);
+                        }
+                        catch (Exception delEx)
+                        {
+                            WriteToLogString(delEx.Message, fullNewFileName);
+                        }
+                    }
                     filesource.MoveTo(fullNewFileName);
                 }
                 else
@@ -474,7 +485,7 @@ namespace EasyReservator
             }
             catch (Exception ex)
             {
-                WriteToLogString(ex.Message);
+                WriteToLogString(ex.Message, fullNewFileName);
             }
         }
 
@@ -492,22 +503,35 @@ namespace EasyReservator
                     clearedfilename += analyze[i];
                 }
             }
+            else if (analyze.Count() == 1)
+            {
+                clearedfilename += analyze[0];
+            }
             string[] newNameArr = clearedfilename.Split('#');
             int lastnum = 1;
             string newfilename = "";
             if (newNameArr.Count() > 1)
             {
+                bool isParsed = false;
                 if (int.TryParse(newNameArr[newNameArr.Count() - 1], out lastnum))
                 {
                     lastnum++;
                     newNameArr[newNameArr.Count() - 1] = lastnum.ToString();
+                    isParsed = true;
                 }
                 foreach (string part in newNameArr)
                 {
                     if (newfilename != "") newfilename += "#";
                     newfilename += part;
                 }
-                newfilename += fileextention;
+                if (isParsed)
+                {
+                    newfilename += fileextention;
+                }
+                else
+                {
+                    newfilename += ("#" + lastnum + fileextention);
+                }
             }
             else
             {
